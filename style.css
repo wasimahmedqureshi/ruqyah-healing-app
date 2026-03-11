@@ -2,56 +2,53 @@ body{
 
 margin:0;
 font-family:Arial;
-background:linear-gradient(135deg,#0b3d2e,#145c43);
+background:#0b3d2e;
 color:white;
 text-align:center;
 
 }
 
+.dark{
+
+background:black;
+color:white;
+
+}
+
 .container{
 
-padding:30px;
+padding:20px;
 
 }
 
-h1{
+.tabs button{
 
-color:gold;
-
-}
-
-.player{
-
-background:rgba(255,255,255,0.1);
-padding:25px;
-border-radius:15px;
-max-width:420px;
-margin:auto;
-
-}
-
-button{
-
-padding:10px 20px;
-margin:8px;
-font-size:16px;
+margin:5px;
+padding:10px 15px;
 border:none;
-border-radius:20px;
 background:gold;
-color:black;
-cursor:pointer;
+border-radius:20px;
 
 }
 
-button:hover{
+.controls button{
 
-background:white;
+padding:10px 15px;
+margin:5px;
+border:none;
+background:gold;
+border-radius:20px;
 
 }
 
 #progress{
 
-width:100%;
-margin-top:20px;
+width:80%;
+
+}
+
+.section{
+
+display:none;
 
 }
