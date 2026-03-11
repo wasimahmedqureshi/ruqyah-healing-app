@@ -13,12 +13,15 @@ var playlist = [
 ];
 
 var index = 0;
+var repeatCount = 0;
+var maxRepeat = 3;
 
 function loadTrack(){
 
 audio.src = playlist[index].file;
-
 title.innerText = playlist[index].title;
+
+repeatCount = 0;
 
 }
 
@@ -56,7 +59,7 @@ index--;
 
 if(index < 0){
 
-index = playlist.length-1;
+index = playlist.length - 1;
 
 }
 
@@ -76,22 +79,38 @@ audio.play();
 
 }
 
-audio.addEventListener("timeupdate",function(){
+audio.addEventListener("ended", function(){
 
-if(audio.duration){
+repeatCount++;
 
-progress.value = (audio.currentTime / audio.duration)*100;
+if(repeatCount < maxRepeat){
+
+audio.currentTime = 0;
+
+audio.play();
+
+}else{
+
+next();
 
 }
 
 });
 
-progress.addEventListener("input",function(){
+audio.addEventListener("timeupdate", function(){
 
-audio.currentTime = (progress.value/100)*audio.duration;
+if(audio.duration){
+
+progress.value = (audio.currentTime / audio.duration) * 100;
+
+}
 
 });
 
-audio.addEventListener("ended",next);
+progress.addEventListener("input", function(){
+
+audio.currentTime = (progress.value/100) * audio.duration;
+
+});
 
 loadTrack();
