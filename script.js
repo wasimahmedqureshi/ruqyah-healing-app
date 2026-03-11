@@ -1,8 +1,8 @@
-var audio = document.getElementById("audio");
-var title = document.getElementById("title");
-var progress = document.getElementById("progress");
+var audio=document.getElementById("audio")
+var title=document.getElementById("title")
+var progress=document.getElementById("progress")
 
-var playlist = [
+var playlist=[
 
 {title:"Surah Fatiha",file:"audio/fatiha.mp3"},
 {title:"Ayatul Kursi",file:"audio/ayatul_kursi.mp3"},
@@ -10,107 +10,105 @@ var playlist = [
 {title:"Surah Falaq",file:"audio/falaq.mp3"},
 {title:"Surah Naas",file:"audio/naas.mp3"}
 
-];
+]
 
-var index = 0;
-var repeatCount = 0;
-var maxRepeat = 3;
+var index=0
+var repeatCount=0
 
-function loadTrack(){
+function loadTrack(i){
 
-audio.src = playlist[index].file;
-title.innerText = playlist[index].title;
-
-repeatCount = 0;
+audio.src=playlist[i].file
+title.innerText=playlist[i].title
 
 }
 
-function play(){
+loadTrack(index)
 
-audio.play();
+function playAudio(){
 
-}
-
-function pause(){
-
-audio.pause();
+audio.play()
 
 }
 
-function next(){
+function pauseAudio(){
 
-index++;
-
-if(index >= playlist.length){
-
-index = 0;
+audio.pause()
 
 }
 
-loadTrack();
+function nextTrack(){
 
-audio.play();
+index++
 
-}
+if(index>=playlist.length){
 
-function prev(){
-
-index--;
-
-if(index < 0){
-
-index = playlist.length - 1;
+index=0
 
 }
 
-loadTrack();
-
-audio.play();
-
-}
-
-function selectTrack(i){
-
-index = i;
-
-loadTrack();
-
-audio.play();
+repeatCount=0
+loadTrack(index)
+playAudio()
 
 }
 
-audio.addEventListener("ended", function(){
+function prevTrack(){
 
-repeatCount++;
+index--
 
-if(repeatCount < maxRepeat){
+if(index<0){
 
-audio.currentTime = 0;
-
-audio.play();
-
-}else{
-
-next();
+index=playlist.length-1
 
 }
 
-});
+repeatCount=0
+loadTrack(index)
+playAudio()
 
-audio.addEventListener("timeupdate", function(){
+}
+
+audio.addEventListener("ended",function(){
+
+repeatCount++
+
+if(repeatCount<3){
+
+audio.currentTime=0
+audio.play()
+
+}
+
+else{
+
+nextTrack()
+
+}
+
+})
+
+audio.addEventListener("timeupdate",function(){
 
 if(audio.duration){
 
-progress.value = (audio.currentTime / audio.duration) * 100;
+progress.value=(audio.currentTime/audio.duration)*100
 
 }
 
-});
+})
 
-progress.addEventListener("input", function(){
+progress.addEventListener("input",function(){
 
-audio.currentTime = (progress.value/100) * audio.duration;
+if(audio.duration){
 
-});
+audio.currentTime=(progress.value/100)*audio.duration
 
-loadTrack();
+}
+
+})
+
+if("serviceWorker" in navigator){
+
+navigator.serviceWorker.register("service-worker.js")
+
+}
