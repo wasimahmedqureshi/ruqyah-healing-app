@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Ruqyah Healing</title>
+<title>Ruqyah Healing App</title>
 
 <link rel="stylesheet" href="style.css">
 
@@ -14,50 +14,43 @@
 
 <body>
 
-<div class="container">
-
 <h1>🕌 Ruqyah Healing</h1>
 
-<p>Islamic Ruqyah Protection Audio</p>
+<div class="tabs">
 
-<div class="player">
+<button onclick="showPlayer()">Ruqyah</button>
+<button onclick="showTasbeeh()">Tasbeeh</button>
 
-<h2 id="title">Surah Fatiha</h2>
+</div>
+
+<div id="player">
+
+<h2 id="title"></h2>
 
 <audio id="audio"></audio>
-
-<div class="controls">
 
 <button onclick="prev()">⏮</button>
 <button onclick="play()">▶</button>
 <button onclick="pause()">⏸</button>
 <button onclick="next()">⏭</button>
 
-</div>
-
-<input type="range" id="progress" value="0">
+<input type="range" id="progress">
 
 </div>
 
-<ul id="playlist">
+<div id="tasbeeh" style="display:none">
 
-<li onclick="selectTrack(0)">Surah Fatiha</li>
-<li onclick="selectTrack(1)">Ayatul Kursi</li>
-<li onclick="selectTrack(2)">Surah Ikhlas</li>
-<li onclick="selectTrack(3)">Surah Falaq</li>
-<li onclick="selectTrack(4)">Surah Naas</li>
+<h2>Tasbeeh Counter</h2>
 
-</ul>
+<h1 id="count">0</h1>
 
-<footer>
-
-Developed by Vaseem Ahmad
-
-</footer>
+<button onclick="increase()">+1</button>
+<button onclick="reset()">Reset</button>
 
 </div>
 
 <script src="script.js"></script>
+<script src="tasbeeh.js"></script>
 
 </body>
 
