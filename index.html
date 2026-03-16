@@ -1,71 +1,113 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Ruqyah Healing App</title>
-
-<link rel="stylesheet" href="style.css">
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ruqyah Healing · Spiritual Wellness</title>
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <!-- PWA manifest -->
+  <link rel="manifest" href="manifest.json">
+  <!-- Theme color for browser -->
+  <meta name="theme-color" content="#0b3d2e">
 </head>
-
 <body>
+  <div class="container">
+    <header>
+      <h1><i class="fas fa-mosque"></i> Ruqyah Healing</h1>
+      <button id="darkModeToggle" class="icon-btn" aria-label="Toggle dark mode">
+        <i class="fas fa-moon"></i>
+      </button>
+    </header>
 
-<div class="container">
+    <!-- Navigation Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-section="ruqyah"><i class="fas fa-hand-sparkles"></i> Ruqyah</button>
+      <button class="tab-btn" data-section="quran"><i class="fas fa-book-quran"></i> Quran</button>
+      <button class="tab-btn" data-section="evil"><i class="fas fa-eye"></i> Evil Eye</button>
+      <button class="tab-btn" data-section="tasbeeh"><i class="fas fa-praying-hands"></i> Tasbeeh</button>
+    </div>
 
-<h1>🕌 Ruqyah Healing</h1>
+    <!-- Audio Player Card -->
+    <div class="player-card">
+      <h2 id="trackTitle">Select a track</h2>
+      <audio id="audio" preload="metadata"></audio>
 
-<button onclick="toggleDark()">🌙 Dark Mode</button>
+      <div class="time-indicator">
+        <span id="currentTime">0:00</span>
+        <span id="duration">0:00</span>
+      </div>
 
-<div class="tabs">
+      <input type="range" id="progress" value="0" min="0" max="100" step="0.1">
 
-<button onclick="showSection('ruqyah')">Ruqyah</button>
-<button onclick="showSection('quran')">Quran</button>
-<button onclick="showSection('evil')">Evil Eye</button>
-<button onclick="showSection('tasbeeh')">Tasbeeh</button>
+      <div class="controls">
+        <button class="ctrl-btn" onclick="prevTrack()"><i class="fas fa-backward"></i></button>
+        <button class="ctrl-btn" id="playPauseBtn" onclick="playPause()"><i class="fas fa-play"></i></button>
+        <button class="ctrl-btn" onclick="nextTrack()"><i class="fas fa-forward"></i></button>
+      </div>
 
-</div>
+      <!-- Optional repeat mode indicator (3x repeat is built-in) -->
+      <div class="repeat-info">
+        <i class="fas fa-redo-alt"></i> Each track repeats 3 times
+      </div>
+    </div>
 
-<!-- PLAYER -->
+    <!-- Tasbeeh Section (hidden by default, shown when tab is active) -->
+    <div id="tasbeehSection" class="section" style="display: none;">
+      <h2><i class="fas fa-pray"></i> Digital Tasbeeh</h2>
+      <div class="dhikr-container">
+        <div class="dhikr-card">
+          <h3>SubhanAllah</h3>
+          <span class="counter" id="countSubhan">0</span>
+          <div class="btn-group">
+            <button class="dhikr-btn" onclick="increase('subhan')">+1</button>
+            <button class="dhikr-btn reset" onclick="reset('subhan')">Reset</button>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressSubhan" style="width: 0%;"></div>
+          </div>
+          <small>Goal: 33</small>
+        </div>
 
-<div id="player">
+        <div class="dhikr-card">
+          <h3>Alhamdulillah</h3>
+          <span class="counter" id="countHamd">0</span>
+          <div class="btn-group">
+            <button class="dhikr-btn" onclick="increase('hamd')">+1</button>
+            <button class="dhikr-btn reset" onclick="reset('hamd')">Reset</button>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressHamd" style="width: 0%;"></div>
+          </div>
+          <small>Goal: 33</small>
+        </div>
 
-<h2 id="title">Loading...</h2>
+        <div class="dhikr-card">
+          <h3>Allahu Akbar</h3>
+          <span class="counter" id="countAkbar">0</span>
+          <div class="btn-group">
+            <button class="dhikr-btn" onclick="increase('akbar')">+1</button>
+            <button class="dhikr-btn reset" onclick="reset('akbar')">Reset</button>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressAkbar" style="width: 0%;"></div>
+          </div>
+          <small>Goal: 33</small>
+        </div>
+      </div>
+      <div class="total-counter">
+        Total: <span id="totalCount">0</span> / 99
+        <button class="reset-all" onclick="resetAll()">Reset All</button>
+      </div>
+    </div>
 
-<audio id="audio"></audio>
+    <!-- Footer credit -->
+    <footer>
+      <p>﷽ · Healing for the soul</p>
+    </footer>
+  </div>
 
-<div class="controls">
-
-<button onclick="prevTrack()">⏮</button>
-<button onclick="playAudio()">▶</button>
-<button onclick="pauseAudio()">⏸</button>
-<button onclick="nextTrack()">⏭</button>
-
-</div>
-
-<input type="range" id="progress">
-
-</div>
-
-<!-- TASBEEH -->
-
-<div id="tasbeeh" class="section">
-
-<h2>📿 Digital Tasbeeh</h2>
-
-<h1 id="count">0</h1>
-
-<button onclick="increase()">+1</button>
-<button onclick="reset()">Reset</button>
-
-</div>
-
-</div>
-
-<script src="script.js"></script>
-
+  <script src="script.js"></script>
 </body>
 </html>
