@@ -32,6 +32,12 @@
     <!-- Audio Player Card -->
     <div class="player-card">
       <h2 id="trackTitle">Select a track</h2>
+      
+      <!-- Surah selector (hidden by default, shown only in Quran tab) -->
+      <select id="surahSelector" style="display: none; margin-bottom: 15px; padding: 8px; border-radius: 20px; width: 100%;">
+        <option value="">-- Choose Surah --</option>
+      </select>
+
       <audio id="audio" preload="metadata"></audio>
 
       <div class="time-indicator">
@@ -47,13 +53,13 @@
         <button class="ctrl-btn" onclick="nextTrack()"><i class="fas fa-forward"></i></button>
       </div>
 
-      <!-- Optional repeat mode indicator (3x repeat is built-in) -->
+      <!-- Repeat info (3 times) -->
       <div class="repeat-info">
         <i class="fas fa-redo-alt"></i> Each track repeats 3 times
       </div>
     </div>
 
-    <!-- Tasbeeh Section (hidden by default, shown when tab is active) -->
+    <!-- Tasbeeh Section -->
     <div id="tasbeehSection" class="section" style="display: none;">
       <h2><i class="fas fa-pray"></i> Digital Tasbeeh</h2>
       <div class="dhikr-container">
@@ -102,7 +108,6 @@
       </div>
     </div>
 
-    <!-- Footer credit -->
     <footer>
       <p>﷽ · Healing for the soul</p>
     </footer>
