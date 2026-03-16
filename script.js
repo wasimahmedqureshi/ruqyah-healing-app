@@ -1,4 +1,4 @@
-// ==================== AUDIO PLAYER ====================
+// ==================== AUDIO PLAYER (DEBUG VERSION) ====================
 const audio = document.getElementById('audio');
 const trackTitle = document.getElementById('trackTitle');
 const progress = document.getElementById('progress');
@@ -10,10 +10,8 @@ const surahSelector = document.getElementById('surahSelector');
 let currentIndex = 0;
 let repeatCount = 0;
 let currentPlaylist = [];
-let isLoading = false;
-let loadAttempts = 0;
 
-// ----- Playlists -----
+// ----- Playlists (local) -----
 const ruqyahPlaylist = [
   { title: 'Surah Al-Fatiha', file: 'audio/fatiha.mp3' },
   { title: 'Ayatul Kursi', file: 'audio/ayatul_kursi.mp3' },
@@ -28,7 +26,7 @@ const evilPlaylist = [
   { title: 'Surah Naas for Protection', file: 'audio/naas.mp3' }
 ];
 
-// ----- QURAN PLAYLIST with multiple reliable HTTPS sources -----
+// ----- QURAN PLAYLIST (SINGLE RELIABLE SOURCE) -----
 const surahNames = [
   "Al-Fatiha", "Al-Baqarah", "Aal-E-Imran", "An-Nisa", "Al-Ma'idah", "Al-An'am", "Al-A'raf", "Al-Anfal", "At-Tawbah", "Yunus",
   "Hud", "Yusuf", "Ar-Ra'd", "Ibrahim", "Al-Hijr", "An-Nahl", "Al-Isra", "Al-Kahf", "Maryam", "Ta-Ha",
@@ -44,15 +42,12 @@ const surahNames = [
   "Al-Masad", "Al-Ikhlas", "Al-Falaq", "An-Nas"
 ];
 
+// Single source: Quranicaudio (HTTPS, reliable)
 const quranPlaylist = surahNames.map((name, index) => {
   const num = (index + 1).toString().padStart(3, '0');
   return {
     title: `${index + 1}. Surah ${name}`,
-    sources: [
-      `https://server8.mp3quran.net/afs/${num}.mp3`,        // Primary: mp3quran (very reliable)
-      `https://audio.islamhouse.com/quran/ar/Alafasy/${num}.mp3`, // Fallback 1
-      `https://download.quranicaudio.com/quran/alafasy/${num}.mp3` // Fallback 2
-    ]
+    file: `https://download.quranicaudio.com/quran/alafasy/${num}.mp3`
   };
 });
 
@@ -81,39 +76,29 @@ surahSelector.addEventListener('change', (e) => {
   }
 });
 
-function loadTrack(index, attempt = 0) {
+function loadTrack(index) {
   if (!currentPlaylist.length) return;
-  
   currentIndex = index;
   const track = currentPlaylist[currentIndex];
-  
-  if (track.sources) {
-    if (attempt >= track.sources.length) {
-      trackTitle.textContent = `❌ ${track.title} (unavailable)`;
-      audio.removeAttribute('src');
-      audio.load();
-      isLoading = false;
-      return;
-    }
-    audio.src = track.sources[attempt];
-  } else {
-    audio.src = track.file;
-  }
-  
+  audio.src = track.file;
   trackTitle.textContent = track.title;
   audio.load();
   repeatCount = 0;
-  isLoading = true;
-  loadAttempts = attempt;
   updatePlayPauseIcon();
 
   if (currentPlaylist === quranPlaylist) {
     surahSelector.value = currentIndex;
   }
+
+  // Log the URL being loaded (for debugging)
+  console.log('Loading audio from:', audio.src);
 }
 
 function playAudio() {
-  audio.play().catch(e => console.log('Play prevented, waiting for load'));
+  audio.play().catch(e => {
+    console.error('Playback failed:', e);
+    // Don't change title here, just log
+  });
 }
 
 function pauseAudio() {
@@ -150,35 +135,27 @@ audio.addEventListener('ended', () => {
   }
 });
 
-// Error handling – try fallbacks but do NOT auto-advance
+// Error handling – log details but do NOT change title or auto-advance
 audio.addEventListener('error', (e) => {
-  if (!isLoading) return;
-  
-  console.warn('Error loading:', audio.src);
-  const track = currentPlaylist[currentIndex];
-  
-  if (track && track.sources) {
-    const nextAttempt = loadAttempts + 1;
-    if (nextAttempt < track.sources.length) {
-      console.log(`Trying fallback ${nextAttempt + 1}...`);
-      loadTrack(currentIndex, nextAttempt);
-      setTimeout(() => playAudio(), 500);
-      return;
-    }
-  }
-  
-  isLoading = false;
-  trackTitle.textContent = `❌ ${track ? track.title : 'Audio'} unavailable`;
+  console.error('Audio error on:', audio.src);
+  console.error('Error code:', audio.error ? audio.error.code : 'unknown');
+  console.error('Error message:', audio.error ? audio.error.message : 'unknown');
+  // Optionally show a subtle indicator, but don't mark as unavailable
+  trackTitle.textContent = `⚠️ ${currentPlaylist[currentIndex].title} (load failed)`;
 });
 
-audio.addEventListener('canplay', () => { isLoading = false; });
+// Successful load resets title if it was changed
+audio.addEventListener('canplay', () => {
+  if (currentPlaylist[currentIndex]) {
+    trackTitle.textContent = currentPlaylist[currentIndex].title;
+  }
+});
 
 // Progress and time
 audio.addEventListener('timeupdate', updateProgress);
 audio.addEventListener('loadedmetadata', () => {
   durationSpan.textContent = formatTime(audio.duration);
   progress.max = audio.duration;
-  isLoading = false;
 });
 
 function updateProgress() {
