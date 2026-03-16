@@ -5,12 +5,14 @@ const progress = document.getElementById('progress');
 const playPauseBtn = document.getElementById('playPauseBtn');
 const currentTimeSpan = document.getElementById('currentTime');
 const durationSpan = document.getElementById('duration');
+const surahSelector = document.getElementById('surahSelector');
 
 let currentIndex = 0;
 let repeatCount = 0; // counts how many times current track has played (max 3)
 let currentPlaylist = [];
 
-// ----- Playlists (using existing audio files) -----
+// ----- Playlists -----
+// Ruqyah (local files – replace with your own or use online if needed)
 const ruqyahPlaylist = [
   { title: 'Surah Al-Fatiha', file: 'audio/fatiha.mp3' },
   { title: 'Ayatul Kursi', file: 'audio/ayatul_kursi.mp3' },
@@ -19,17 +21,39 @@ const ruqyahPlaylist = [
   { title: 'Surah An-Naas', file: 'audio/naas.mp3' }
 ];
 
+// Evil Eye (local files)
 const evilPlaylist = [
   { title: 'Evil Eye Protection (Ayatul Kursi)', file: 'audio/ayatul_kursi.mp3' },
   { title: 'Nazar ki Dua (Surah Falaq)', file: 'audio/falaq.mp3' },
   { title: 'Surah Naas for Protection', file: 'audio/naas.mp3' }
 ];
 
-const quranPlaylist = [
-  { title: 'Surah Baqarah (Last Ayat)', file: 'audio/baqarah_last_ayat.mp3' },
-  { title: 'Surah Fatiha', file: 'audio/fatiha.mp3' },
-  { title: 'Ayatul Kursi', file: 'audio/ayatul_kursi.mp3' }
+// ----- QURAN PLAYLIST (ONLINE STREAM) -----
+// Using Alafasy recitation from Islamic Network CDN
+// Pattern: https://cdn.islamic.network/quran/audio/128/ar.alafasy/001.mp3 (for surah 1)
+const surahNames = [
+  "Al-Fatiha", "Al-Baqarah", "Aal-E-Imran", "An-Nisa", "Al-Ma'idah", "Al-An'am", "Al-A'raf", "Al-Anfal", "At-Tawbah", "Yunus",
+  "Hud", "Yusuf", "Ar-Ra'd", "Ibrahim", "Al-Hijr", "An-Nahl", "Al-Isra", "Al-Kahf", "Maryam", "Ta-Ha",
+  "Al-Anbiya", "Al-Hajj", "Al-Mu'minun", "An-Nur", "Al-Furqan", "Ash-Shu'ara", "An-Naml", "Al-Qasas", "Al-Ankabut", "Ar-Rum",
+  "Luqman", "As-Sajda", "Al-Ahzab", "Saba", "Fatir", "Ya-Sin", "As-Saffat", "Sad", "Az-Zumar", "Ghafir",
+  "Fussilat", "Ash-Shura", "Az-Zukhruf", "Ad-Dukhan", "Al-Jathiya", "Al-Ahqaf", "Muhammad", "Al-Fath", "Al-Hujurat", "Qaf",
+  "Adh-Dhariyat", "At-Tur", "An-Najm", "Al-Qamar", "Ar-Rahman", "Al-Waqia", "Al-Hadid", "Al-Mujadila", "Al-Hashr", "Al-Mumtahina",
+  "As-Saff", "Al-Jumu'a", "Al-Munafiqun", "At-Taghabun", "At-Talaq", "At-Tahrim", "Al-Mulk", "Al-Qalam", "Al-Haqqa", "Al-Ma'arij",
+  "Nuh", "Al-Jinn", "Al-Muzzammil", "Al-Muddaththir", "Al-Qiyama", "Al-Insan", "Al-Mursalat", "An-Naba", "An-Nazi'at", "Abasa",
+  "At-Takwir", "Al-Infitar", "Al-Mutaffifin", "Al-Inshiqaq", "Al-Buruj", "At-Tariq", "Al-A'la", "Al-Ghashiya", "Al-Fajr", "Al-Balad",
+  "Ash-Shams", "Al-Layl", "Ad-Duha", "Ash-Sharh", "At-Tin", "Al-Alaq", "Al-Qadr", "Al-Bayyina", "Az-Zalzala", "Al-Adiyat",
+  "Al-Qaria", "At-Takathur", "Al-Asr", "Al-Humaza", "Al-Fil", "Quraish", "Al-Ma'un", "Al-Kawthar", "Al-Kafirun", "An-Nasr",
+  "Al-Masad", "Al-Ikhlas", "Al-Falaq", "An-Nas"
 ];
+
+// Generate playlist with online URLs
+const quranPlaylist = surahNames.map((name, index) => {
+  const surahNumber = (index + 1).toString().padStart(3, '0'); // 001, 002, ... 114
+  return {
+    title: `${index + 1}. Surah ${name}`,
+    file: `https://cdn.islamic.network/quran/audio/128/ar.alafasy/${surahNumber}.mp3`
+  };
+});
 
 // Default playlist
 currentPlaylist = ruqyahPlaylist;
@@ -37,22 +61,48 @@ currentPlaylist = ruqyahPlaylist;
 // Load first track
 loadTrack(0);
 
+// Populate surah selector dropdown
+function populateSurahSelector() {
+  surahSelector.innerHTML = '<option value="">-- Choose Surah --</option>';
+  quranPlaylist.forEach((track, idx) => {
+    const option = document.createElement('option');
+    option.value = idx;
+    option.textContent = track.title;
+    surahSelector.appendChild(option);
+  });
+}
+populateSurahSelector();
+
+// Handle surah selection
+surahSelector.addEventListener('change', (e) => {
+  const idx = parseInt(e.target.value);
+  if (!isNaN(idx)) {
+    currentIndex = idx;
+    loadTrack(currentIndex);
+    playAudio();
+    surahSelector.value = idx; // keep selected
+  }
+});
+
 function loadTrack(index) {
   if (!currentPlaylist.length) return;
   currentIndex = index;
   const track = currentPlaylist[currentIndex];
   audio.src = track.file;
   trackTitle.textContent = track.title;
-  audio.load(); // reset audio element
-  // Reset repeat counter for new track
+  audio.load();
   repeatCount = 0;
-  // Update play/pause icon
   updatePlayPauseIcon();
+
+  // Update surah selector if current playlist is Quran
+  if (currentPlaylist === quranPlaylist) {
+    surahSelector.value = currentIndex;
+  }
 }
 
 function playAudio() {
   audio.play().catch(e => {
-    alert('Could not play audio. File may be missing: ' + audio.src);
+    alert('Could not play audio. File may be missing or URL invalid: ' + audio.src);
   });
 }
 
@@ -136,7 +186,6 @@ const tasbeehSection = document.getElementById('tasbeehSection');
 
 tabButtons.forEach(btn => {
   btn.addEventListener('click', () => {
-    // Remove active class from all tabs
     tabButtons.forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 
@@ -145,20 +194,21 @@ tabButtons.forEach(btn => {
     // Show/hide Tasbeeh section
     if (section === 'tasbeeh') {
       tasbeehSection.style.display = 'block';
+      surahSelector.style.display = 'none'; // hide selector
     } else {
       tasbeehSection.style.display = 'none';
-      // Switch playlist based on section
-      switch (section) {
-        case 'ruqyah':
-          currentPlaylist = ruqyahPlaylist;
-          break;
-        case 'evil':
-          currentPlaylist = evilPlaylist;
-          break;
-        case 'quran':
-          currentPlaylist = quranPlaylist;
-          break;
+
+      // Show surah selector only for Quran tab
+      if (section === 'quran') {
+        surahSelector.style.display = 'block';
+        currentPlaylist = quranPlaylist;
+      } else {
+        surahSelector.style.display = 'none';
+        // Switch to appropriate local playlist
+        if (section === 'ruqyah') currentPlaylist = ruqyahPlaylist;
+        if (section === 'evil') currentPlaylist = evilPlaylist;
       }
+
       // Reset to first track of new playlist and play
       loadTrack(0);
       playAudio();
@@ -192,14 +242,12 @@ function updateDhikrDisplay(dhikr) {
   const element = document.getElementById(`count${dhikr.charAt(0).toUpperCase() + dhikr.slice(1)}`);
   if (element) element.textContent = counts[dhikr];
 
-  // Update progress bar (goal 33)
   const progressFill = document.getElementById(`progress${dhikr.charAt(0).toUpperCase() + dhikr.slice(1)}`);
   if (progressFill) {
     const percent = Math.min((counts[dhikr] / 33) * 100, 100);
     progressFill.style.width = percent + '%';
   }
 
-  // Update total
   const total = counts.subhan + counts.hamd + counts.akbar;
   document.getElementById('totalCount').textContent = total;
 }
@@ -222,5 +270,6 @@ darkToggle.addEventListener('click', () => {
   }
 });
 
-// ==================== INITIAL HIDE TASBEEH ====================
+// ==================== INITIAL HIDE TASBEEH AND SELECTOR ====================
 tasbeehSection.style.display = 'none';
+surahSelector.style.display = 'none';
