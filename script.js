@@ -10,9 +10,8 @@ const surahSelector = document.getElementById('surahSelector');
 let currentIndex = 0;
 let repeatCount = 0;
 let currentPlaylist = [];
-let isLoading = false;          // prevents multiple error triggers
-let loadAttempts = 0;           // counts attempts for current track
-const MAX_ATTEMPTS = 3;         // max fallback attempts per track
+let isLoading = false;
+let loadAttempts = 0;
 
 // ----- Playlists -----
 const ruqyahPlaylist = [
@@ -29,18 +28,30 @@ const evilPlaylist = [
   { title: 'Surah Naas for Protection', file: 'audio/naas.mp3' }
 ];
 
-// ----- QURAN PLAYLIST with multiple fallback URLs -----
-const surahNames = [ "Al-Fatiha", "Al-Baqarah", "Aal-E-Imran", "An-Nisa", "Al-Ma'idah", "Al-An'am", "Al-A'raf", "Al-Anfal", "At-Tawbah", "Yunus", "Hud", "Yusuf", "Ar-Ra'd", "Ibrahim", "Al-Hijr", "An-Nahl", "Al-Isra", "Al-Kahf", "Maryam", "Ta-Ha", "Al-Anbiya", "Al-Hajj", "Al-Mu'minun", "An-Nur", "Al-Furqan", "Ash-Shu'ara", "An-Naml", "Al-Qasas", "Al-Ankabut", "Ar-Rum", "Luqman", "As-Sajda", "Al-Ahzab", "Saba", "Fatir", "Ya-Sin", "As-Saffat", "Sad", "Az-Zumar", "Ghafir", "Fussilat", "Ash-Shura", "Az-Zukhruf", "Ad-Dukhan", "Al-Jathiya", "Al-Ahqaf", "Muhammad", "Al-Fath", "Al-Hujurat", "Qaf", "Adh-Dhariyat", "At-Tur", "An-Najm", "Al-Qamar", "Ar-Rahman", "Al-Waqia", "Al-Hadid", "Al-Mujadila", "Al-Hashr", "Al-Mumtahina", "As-Saff", "Al-Jumu'a", "Al-Munafiqun", "At-Taghabun", "At-Talaq", "At-Tahrim", "Al-Mulk", "Al-Qalam", "Al-Haqqa", "Al-Ma'arij", "Nuh", "Al-Jinn", "Al-Muzzammil", "Al-Muddaththir", "Al-Qiyama", "Al-Insan", "Al-Mursalat", "An-Naba", "An-Nazi'at", "Abasa", "At-Takwir", "Al-Infitar", "Al-Mutaffifin", "Al-Inshiqaq", "Al-Buruj", "At-Tariq", "Al-A'la", "Al-Ghashiya", "Al-Fajr", "Al-Balad", "Ash-Shams", "Al-Layl", "Ad-Duha", "Ash-Sharh", "At-Tin", "Al-Alaq", "Al-Qadr", "Al-Bayyina", "Az-Zalzala", "Al-Adiyat", "Al-Qaria", "At-Takathur", "Al-Asr", "Al-Humaza", "Al-Fil", "Quraish", "Al-Ma'un", "Al-Kawthar", "Al-Kafirun", "An-Nasr", "Al-Masad", "Al-Ikhlas", "Al-Falaq", "An-Nas" ];
+// ----- QURAN PLAYLIST with multiple reliable HTTPS sources -----
+const surahNames = [
+  "Al-Fatiha", "Al-Baqarah", "Aal-E-Imran", "An-Nisa", "Al-Ma'idah", "Al-An'am", "Al-A'raf", "Al-Anfal", "At-Tawbah", "Yunus",
+  "Hud", "Yusuf", "Ar-Ra'd", "Ibrahim", "Al-Hijr", "An-Nahl", "Al-Isra", "Al-Kahf", "Maryam", "Ta-Ha",
+  "Al-Anbiya", "Al-Hajj", "Al-Mu'minun", "An-Nur", "Al-Furqan", "Ash-Shu'ara", "An-Naml", "Al-Qasas", "Al-Ankabut", "Ar-Rum",
+  "Luqman", "As-Sajda", "Al-Ahzab", "Saba", "Fatir", "Ya-Sin", "As-Saffat", "Sad", "Az-Zumar", "Ghafir",
+  "Fussilat", "Ash-Shura", "Az-Zukhruf", "Ad-Dukhan", "Al-Jathiya", "Al-Ahqaf", "Muhammad", "Al-Fath", "Al-Hujurat", "Qaf",
+  "Adh-Dhariyat", "At-Tur", "An-Najm", "Al-Qamar", "Ar-Rahman", "Al-Waqia", "Al-Hadid", "Al-Mujadila", "Al-Hashr", "Al-Mumtahina",
+  "As-Saff", "Al-Jumu'a", "Al-Munafiqun", "At-Taghabun", "At-Talaq", "At-Tahrim", "Al-Mulk", "Al-Qalam", "Al-Haqqa", "Al-Ma'arij",
+  "Nuh", "Al-Jinn", "Al-Muzzammil", "Al-Muddaththir", "Al-Qiyama", "Al-Insan", "Al-Mursalat", "An-Naba", "An-Nazi'at", "Abasa",
+  "At-Takwir", "Al-Infitar", "Al-Mutaffifin", "Al-Inshiqaq", "Al-Buruj", "At-Tariq", "Al-A'la", "Al-Ghashiya", "Al-Fajr", "Al-Balad",
+  "Ash-Shams", "Al-Layl", "Ad-Duha", "Ash-Sharh", "At-Tin", "Al-Alaq", "Al-Qadr", "Al-Bayyina", "Az-Zalzala", "Al-Adiyat",
+  "Al-Qaria", "At-Takathur", "Al-Asr", "Al-Humaza", "Al-Fil", "Quraish", "Al-Ma'un", "Al-Kawthar", "Al-Kafirun", "An-Nasr",
+  "Al-Masad", "Al-Ikhlas", "Al-Falaq", "An-Nas"
+];
 
-// Multiple sources for each surah (primary + fallbacks)
 const quranPlaylist = surahNames.map((name, index) => {
   const num = (index + 1).toString().padStart(3, '0');
   return {
     title: `${index + 1}. Surah ${name}`,
     sources: [
-      `https://audio.islamhouse.com/quran/ar/Alafasy/${num}.mp3`,        // primary
-      `https://download.quranicaudio.com/quran/alafasy/${num}.mp3`,      // fallback 1
-      `http://www.everyayah.com/data/Alafasy_128kbps/${num}.mp3`         // fallback 2
+      `https://server8.mp3quran.net/afs/${num}.mp3`,        // Primary: mp3quran (very reliable)
+      `https://audio.islamhouse.com/quran/ar/Alafasy/${num}.mp3`, // Fallback 1
+      `https://download.quranicaudio.com/quran/alafasy/${num}.mp3` // Fallback 2
     ]
   };
 });
@@ -48,7 +59,7 @@ const quranPlaylist = surahNames.map((name, index) => {
 // Default playlist
 currentPlaylist = ruqyahPlaylist;
 
-// Populate surah selector dropdown
+// Populate surah selector
 function populateSurahSelector() {
   surahSelector.innerHTML = '<option value="">-- Choose Surah --</option>';
   quranPlaylist.forEach((track, idx) => {
@@ -60,7 +71,6 @@ function populateSurahSelector() {
 }
 populateSurahSelector();
 
-// Handle surah selection
 surahSelector.addEventListener('change', (e) => {
   const idx = parseInt(e.target.value);
   if (!isNaN(idx)) {
@@ -77,10 +87,8 @@ function loadTrack(index, attempt = 0) {
   currentIndex = index;
   const track = currentPlaylist[currentIndex];
   
-  // If track has multiple sources (Quran playlist), use the appropriate attempt
   if (track.sources) {
     if (attempt >= track.sources.length) {
-      // All sources failed – show error message and stop
       trackTitle.textContent = `❌ ${track.title} (unavailable)`;
       audio.removeAttribute('src');
       audio.load();
@@ -89,15 +97,14 @@ function loadTrack(index, attempt = 0) {
     }
     audio.src = track.sources[attempt];
   } else {
-    // Regular playlist with single source
     audio.src = track.file;
   }
   
   trackTitle.textContent = track.title;
   audio.load();
   repeatCount = 0;
-  isLoading = true;          // we are now loading
-  loadAttempts = attempt;    // store current attempt number
+  isLoading = true;
+  loadAttempts = attempt;
   updatePlayPauseIcon();
 
   if (currentPlaylist === quranPlaylist) {
@@ -106,10 +113,7 @@ function loadTrack(index, attempt = 0) {
 }
 
 function playAudio() {
-  audio.play().catch(e => {
-    // Silent catch – error handler will deal with it
-    console.log('Play prevented, waiting for load');
-  });
+  audio.play().catch(e => console.log('Play prevented, waiting for load'));
 }
 
 function pauseAudio() {
@@ -117,17 +121,14 @@ function pauseAudio() {
 }
 
 function playPause() {
-  if (audio.paused) {
-    playAudio();
-  } else {
-    pauseAudio();
-  }
+  if (audio.paused) playAudio();
+  else pauseAudio();
 }
 
 function nextTrack() {
   if (!currentPlaylist.length) return;
   currentIndex = (currentIndex + 1) % currentPlaylist.length;
-  loadTrack(currentIndex);  // start fresh with attempt 0
+  loadTrack(currentIndex);
   playAudio();
 }
 
@@ -149,43 +150,35 @@ audio.addEventListener('ended', () => {
   }
 });
 
-// Error handling – try fallback sources, but DO NOT auto-advance to next track
+// Error handling – try fallbacks but do NOT auto-advance
 audio.addEventListener('error', (e) => {
-  if (!isLoading) return;   // prevent multiple triggers
+  if (!isLoading) return;
   
   console.warn('Error loading:', audio.src);
-  
-  // If this track has multiple sources (Quran playlist), try next fallback
   const track = currentPlaylist[currentIndex];
+  
   if (track && track.sources) {
     const nextAttempt = loadAttempts + 1;
     if (nextAttempt < track.sources.length) {
-      // Try next source for the same track
       console.log(`Trying fallback ${nextAttempt + 1}...`);
       loadTrack(currentIndex, nextAttempt);
-      // Don't auto-play; wait for user or we can auto-play after a short delay
       setTimeout(() => playAudio(), 500);
       return;
     }
   }
   
-  // No more fallbacks – mark as failed and show error, but do NOT advance
   isLoading = false;
-  trackTitle.textContent = `⚠️ ${track ? track.title : 'Audio'} unavailable`;
-  // Optionally disable play button or indicate error
+  trackTitle.textContent = `❌ ${track ? track.title : 'Audio'} unavailable`;
 });
 
-// Successful load resets loading flag
-audio.addEventListener('canplay', () => {
-  isLoading = false;
-});
+audio.addEventListener('canplay', () => { isLoading = false; });
 
-// Update progress bar and time
+// Progress and time
 audio.addEventListener('timeupdate', updateProgress);
 audio.addEventListener('loadedmetadata', () => {
   durationSpan.textContent = formatTime(audio.duration);
   progress.max = audio.duration;
-  isLoading = false;        // metadata loaded successfully
+  isLoading = false;
 });
 
 function updateProgress() {
@@ -208,11 +201,7 @@ function formatTime(seconds) {
 
 function updatePlayPauseIcon() {
   const icon = playPauseBtn.querySelector('i');
-  if (audio.paused) {
-    icon.className = 'fas fa-play';
-  } else {
-    icon.className = 'fas fa-pause';
-  }
+  icon.className = audio.paused ? 'fas fa-play' : 'fas fa-pause';
 }
 
 audio.addEventListener('play', updatePlayPauseIcon);
@@ -244,7 +233,6 @@ tabButtons.forEach(btn => {
         if (section === 'evil') currentPlaylist = evilPlaylist;
       }
 
-      // Reset to first track of new playlist
       loadTrack(0);
       playAudio();
     }
@@ -252,11 +240,7 @@ tabButtons.forEach(btn => {
 });
 
 // ==================== TASBEEH LOGIC ====================
-let counts = {
-  subhan: 0,
-  hamd: 0,
-  akbar: 0
-};
+let counts = { subhan: 0, hamd: 0, akbar: 0 };
 
 function increase(dhikr) {
   counts[dhikr]++;
@@ -298,11 +282,7 @@ const darkToggle = document.getElementById('darkModeToggle');
 darkToggle.addEventListener('click', () => {
   document.body.classList.toggle('dark');
   const icon = darkToggle.querySelector('i');
-  if (document.body.classList.contains('dark')) {
-    icon.className = 'fas fa-sun';
-  } else {
-    icon.className = 'fas fa-moon';
-  }
+  icon.className = document.body.classList.contains('dark') ? 'fas fa-sun' : 'fas fa-moon';
 });
 
 // ==================== INITIAL HIDE ====================
