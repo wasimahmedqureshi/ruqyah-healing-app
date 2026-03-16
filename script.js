@@ -1,4 +1,4 @@
-// ==================== AUDIO PLAYER (DEBUG VERSION) ====================
+// ==================== AUDIO PLAYER WITH RETRY LOGIC ====================
 const audio = document.getElementById('audio');
 const trackTitle = document.getElementById('trackTitle');
 const progress = document.getElementById('progress');
@@ -10,6 +10,10 @@ const surahSelector = document.getElementById('surahSelector');
 let currentIndex = 0;
 let repeatCount = 0;
 let currentPlaylist = [];
+let retryCount = 0;
+let retryTimeout = null;
+const MAX_RETRIES = 3; // number of sources to try per surah
+const RETRY_DELAY = 2000; // 2 seconds per source
 
 // ----- Playlists (local) -----
 const ruqyahPlaylist = [
@@ -26,7 +30,7 @@ const evilPlaylist = [
   { title: 'Surah Naas for Protection', file: 'audio/naas.mp3' }
 ];
 
-// ----- QURAN PLAYLIST (SINGLE RELIABLE SOURCE) -----
+// ----- QURAN PLAYLIST with multiple sources -----
 const surahNames = [
   "Al-Fatiha", "Al-Baqarah", "Aal-E-Imran", "An-Nisa", "Al-Ma'idah", "Al-An'am", "Al-A'raf", "Al-Anfal", "At-Tawbah", "Yunus",
   "Hud", "Yusuf", "Ar-Ra'd", "Ibrahim", "Al-Hijr", "An-Nahl", "Al-Isra", "Al-Kahf", "Maryam", "Ta-Ha",
@@ -42,12 +46,18 @@ const surahNames = [
   "Al-Masad", "Al-Ikhlas", "Al-Falaq", "An-Nas"
 ];
 
-// Single source: Quranicaudio (HTTPS, reliable)
+// List of sources in order of reliability (HTTPS)
+const SOURCES = [
+  'https://server8.mp3quran.net/afs/{num}.mp3',        // fastest & reliable
+  'https://download.quranicaudio.com/quran/alafasy/{num}.mp3',
+  'https://audio.islamhouse.com/quran/ar/Alafasy/{num}.mp3'
+];
+
 const quranPlaylist = surahNames.map((name, index) => {
   const num = (index + 1).toString().padStart(3, '0');
   return {
     title: `${index + 1}. Surah ${name}`,
-    file: `https://download.quranicaudio.com/quran/alafasy/${num}.mp3`
+    sources: SOURCES.map(s => s.replace('{num}', num))
   };
 });
 
@@ -70,34 +80,61 @@ surahSelector.addEventListener('change', (e) => {
   const idx = parseInt(e.target.value);
   if (!isNaN(idx)) {
     currentIndex = idx;
-    loadTrack(currentIndex);
-    playAudio();
-    surahSelector.value = idx;
+    loadTrackWithRetry(currentIndex);
   }
 });
 
-function loadTrack(index) {
+function loadTrackWithRetry(index, retryAttempt = 0) {
   if (!currentPlaylist.length) return;
+  
+  // Clear any pending retry timeout
+  if (retryTimeout) clearTimeout(retryTimeout);
+  
   currentIndex = index;
   const track = currentPlaylist[currentIndex];
-  audio.src = track.file;
+  
+  // If track has multiple sources (Quran), try the appropriate attempt
+  if (track.sources) {
+    if (retryAttempt >= track.sources.length) {
+      // All sources failed – mark as unavailable
+      trackTitle.textContent = `❌ ${track.title} (all sources failed)`;
+      audio.removeAttribute('src');
+      audio.load();
+      surahSelector.value = currentIndex; // keep selected
+      return;
+    }
+    audio.src = track.sources[retryAttempt];
+  } else {
+    // Local playlist
+    audio.src = track.file;
+  }
+  
   trackTitle.textContent = track.title;
   audio.load();
   repeatCount = 0;
+  retryCount = retryAttempt;
   updatePlayPauseIcon();
 
   if (currentPlaylist === quranPlaylist) {
     surahSelector.value = currentIndex;
   }
-
-  // Log the URL being loaded (for debugging)
-  console.log('Loading audio from:', audio.src);
+  
+  // Set a timeout to detect if loading takes too long (e.g., server hangs)
+  retryTimeout = setTimeout(() => {
+    console.warn(`Source ${retryAttempt+1} timed out, trying next...`);
+    // If we haven't reached max retries, try next source
+    if (track.sources && retryAttempt + 1 < track.sources.length) {
+      loadTrackWithRetry(currentIndex, retryAttempt + 1);
+    } else {
+      // No more sources
+      trackTitle.textContent = `❌ ${track.title} (timeout)`;
+    }
+  }, 8000); // 8 second timeout
 }
 
 function playAudio() {
   audio.play().catch(e => {
-    console.error('Playback failed:', e);
-    // Don't change title here, just log
+    console.log('Playback error, will retry source if needed');
   });
 }
 
@@ -112,16 +149,15 @@ function playPause() {
 
 function nextTrack() {
   if (!currentPlaylist.length) return;
-  currentIndex = (currentIndex + 1) % currentPlaylist.length;
-  loadTrack(currentIndex);
-  playAudio();
+  let nextIndex = (currentIndex + 1) % currentPlaylist.length;
+  loadTrackWithRetry(nextIndex);
+  // Play will be attempted after load
 }
 
 function prevTrack() {
   if (!currentPlaylist.length) return;
-  currentIndex = (currentIndex - 1 + currentPlaylist.length) % currentPlaylist.length;
-  loadTrack(currentIndex);
-  playAudio();
+  let prevIndex = (currentIndex - 1 + currentPlaylist.length) % currentPlaylist.length;
+  loadTrackWithRetry(prevIndex);
 }
 
 // Auto repeat 3 times then next
@@ -135,19 +171,32 @@ audio.addEventListener('ended', () => {
   }
 });
 
-// Error handling – log details but do NOT change title or auto-advance
-audio.addEventListener('error', (e) => {
-  console.error('Audio error on:', audio.src);
-  console.error('Error code:', audio.error ? audio.error.code : 'unknown');
-  console.error('Error message:', audio.error ? audio.error.message : 'unknown');
-  // Optionally show a subtle indicator, but don't mark as unavailable
-  trackTitle.textContent = `⚠️ ${currentPlaylist[currentIndex].title} (load failed)`;
+// Handle successful load
+audio.addEventListener('canplay', () => {
+  // Clear the retry timeout
+  if (retryTimeout) clearTimeout(retryTimeout);
+  // Ensure title is correct
+  const track = currentPlaylist[currentIndex];
+  if (track) trackTitle.textContent = track.title;
+  // Attempt to play automatically (if user expects it)
+  playAudio();
 });
 
-// Successful load resets title if it was changed
-audio.addEventListener('canplay', () => {
-  if (currentPlaylist[currentIndex]) {
-    trackTitle.textContent = currentPlaylist[currentIndex].title;
+// Handle errors during loading
+audio.addEventListener('error', (e) => {
+  console.error('Error loading source:', audio.src);
+  // Clear timeout
+  if (retryTimeout) clearTimeout(retryTimeout);
+  
+  const track = currentPlaylist[currentIndex];
+  if (!track) return;
+  
+  // If there are more sources, try the next one
+  if (track.sources && retryCount + 1 < track.sources.length) {
+    loadTrackWithRetry(currentIndex, retryCount + 1);
+  } else {
+    // No more sources
+    trackTitle.textContent = `❌ ${track.title} (failed)`;
   }
 });
 
@@ -210,8 +259,8 @@ tabButtons.forEach(btn => {
         if (section === 'evil') currentPlaylist = evilPlaylist;
       }
 
-      loadTrack(0);
-      playAudio();
+      // Load first track of new playlist
+      loadTrackWithRetry(0);
     }
   });
 });
